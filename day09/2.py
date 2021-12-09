@@ -7,7 +7,6 @@ arr=[]
 for line in f.readlines():
     arr.append([int(x) for x in line.strip()])
 
-
 def getAdjacent(x,y,arr):
     out=[]
     if(x > 0):
@@ -28,7 +27,6 @@ def isLowest(x,y,arr):
             isLowest=False
     return isLowest
 
-
 def floodFill(x,y,arr,shadow):
 
     shadow[y][x]="+"
@@ -36,26 +34,21 @@ def floodFill(x,y,arr,shadow):
         nx=x-1
         ny=y
         if (arr[ny][nx] < 9) and shadow[ny][nx]!="+":
-            shadow[ny][nx]="+"
             floodFill(nx,ny,arr,shadow)
     if(y > 0):
         nx=x
         ny=y-1
         if (arr[ny][nx] < 9) and shadow[ny][nx]!="+":
-            shadow[ny][nx]="+"
             floodFill(nx,ny,arr,shadow)
     if(x+1 < len(arr[0])):
         nx=x+1
         ny=y
         if (arr[ny][nx] < 9) and shadow[ny][nx]!="+":
-            shadow[ny][nx]="+"
             floodFill(nx,ny,arr,shadow)
-
     if(y+1 < len(arr)):
         nx=x
         ny=y+1
         if (arr[ny][nx] < 9) and shadow[ny][nx]!="+":
-            shadow[ny][nx]="+"
             floodFill(nx,ny,arr,shadow)
 
 
