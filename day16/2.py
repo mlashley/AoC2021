@@ -4,13 +4,12 @@ import sys
 
 inputs = [
         'D2FE28', # 2021 val
-          '38006F45291200', # 2 subpackets 10, 20
-          'EE00D40C823060', # 3 sub packets 1,2,3
-            '8A004A801A8002F478', #16 
-          
-           '620080001611562C8802118E34',
-           'C0015000016115A2E0802F182340'
-           'A0016C880162017C3686B18A3D4780',
+        '38006F45291200', # 2 subpackets 10, 20
+        'EE00D40C823060', # 3 sub packets 1,2,3
+        '8A004A801A8002F478', #16           
+        '620080001611562C8802118E34',
+        'C0015000016115A2E0802F182340'
+        'A0016C880162017C3686B18A3D4780',
         'C200B40A82', #  1+ 2 =3
         '04005AC33890', # 6*9
         '880086C3E88112', # min 7,8,9
@@ -23,6 +22,7 @@ inputs = [
 ]
 
 def decode(bits,joiner):
+
     global PACKETSTRING
     logging.debug(f"Decode: {bits}")
     offset=0
@@ -44,7 +44,6 @@ def decodeOne(bits):
     global PACKETSTRING
     
     logging.debug(f"DecodeOne: {bits}")
-    
 
     # Version/Type
     offset=0
@@ -79,21 +78,16 @@ def decodeOne(bits):
         elif typ == 7: # eq
             PACKETSTRING+="("
             j="="
-
-        
-
+      
         logging.debug(f"v:{ver} t:{typ} - operator")
         lengthtypeid=int(bits[offset],2)
         offset += 1
         if lengthtypeid == 0:
-            # print("subpacketlenbits[15]",bits[offset:offset+15])
             subpacketlen=int(bits[offset:offset+15],2)
             offset+=15
             logging.debug(f"subpacketlen:{subpacketlen}")
             offset += decode(bits[offset:offset+subpacketlen],j)
-
         else:
-            # print("subpacketcntbits[11]",bits[offset:offset+11])
             subpacketcount=int(bits[offset:offset+11],2)
             offset+=11
             logging.debug(f"subpacketcount:{subpacketcount}")
@@ -102,13 +96,11 @@ def decodeOne(bits):
                 offset += decodeOne(bits[offset:])
                 PACKETSTRING+=j
                 logging.debug(f"<=={i}==ss")
-            PACKETSTRING=PACKETSTRING[:-1]
+            PACKETSTRING=PACKETSTRING[:-1] # remove trailing + or , etc.
         PACKETSTRING+=")"
     logging.debug(f"<---{offset}---")
     
     return offset
-
-
 
 def decodeLiteral(bits):
     global PACKETSTRING
@@ -120,26 +112,22 @@ def decodeLiteral(bits):
         offset += 5
         valbits += chunk[1:] 
         more = int(chunk[0],2) # because 0 is False.
-        # print("chunk,valbits,more",chunk,valbits,more)
     logging.debug(f"val:{int(valbits,2)}")
     PACKETSTRING += str(int(valbits,2))
     return offset
 
-
 l = logging.getLogger()
-l.setLevel(logging.DEBUG)
-l.setLevel(logging.INFO)
+l.setLevel(logging.INFO) # or DEBUG
 
 for input in inputs:
     b="".join([ format(int(x,16),'04b') for x in input]) # Hacky to avoid zeropad the overall bigInt...
     VERSIONSUM=0
     PACKETSTRING=""
-    
     decodeOne(b)
     logging.info(f"VERSIONSUM:{VERSIONSUM}")
     PACKETSTRING = PACKETSTRING.replace("=","==")
     logging.info(f"PACKETSTRING:{PACKETSTRING}")
-    logging.info(f"Eval {int(eval(PACKETSTRING))}")
+    logging.info(f"Evaluates to {int(eval(PACKETSTRING))}")
     logging.debug("-- end --")
 
 
