@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-
+import logging
 
 inputs = [
 #        'D2FE28', # 2021 val
@@ -14,14 +14,14 @@ inputs = [
 ]
 
 def decode(bits):
-    print("Decode:",bits)
+    logging.debug(f"Decode: {bits}")
     offset=0
     while offset < len(bits):
         offset += decodeOne(bits[offset:])
         remaining = len(bits)-offset
-        print("Remaining bits",remaining)
+        logging.debug(f"Remaining bits {remaining}")
         if remaining > 0  and int(bits[offset:],2) == 0: # Padding...
-            print("Skip padding",bits[offset:])
+            logging.debug(f"Skip padding {bits[offset:]}")
             break
     return offset
 
@@ -30,7 +30,7 @@ def decodeOne(bits):
 
     global VERSIONSUM
     
-    print("DecodeOne:",bits)
+    logging.debug(f"DecodeOne: {bits}")
 
     # Version/Type
     offset=0
@@ -41,30 +41,30 @@ def decodeOne(bits):
     typ=int(bits[offset:offset+3],2)
     offset+=3    
     if typ == 4: # literal value packet
-        print(f"v:{ver} t:{typ} - literal")
+        logging.debug(f"v:{ver} t:{typ} - literal")
         offset += decodeLiteral(bits[offset:])
     else: # operator packet
-        print(f"v:{ver} t:{typ} - operator")
+        logging.debug(f"v:{ver} t:{typ} - operator")
         lengthtypeid=int(bits[offset],2)
         offset += 1
         if lengthtypeid == 0:
             # print("subpacketlenbits[15]",bits[offset:offset+15])
             subpacketlen=int(bits[offset:offset+15],2)
             offset+=15
-            print(f"subpacketlen:{subpacketlen}")
+            logging.debug(f"subpacketlen:{subpacketlen}")
             offset += decode(bits[offset:offset+subpacketlen])
 
         else:
             # print("subpacketcntbits[11]",bits[offset:offset+11])
             subpacketcount=int(bits[offset:offset+11],2)
             offset+=11
-            print(f"subpacketcount:{subpacketcount}")
+            logging.debug(f"subpacketcount:{subpacketcount}")
             for i in range(subpacketcount):
-                print(f"ss=={i}==>")
+                logging.debug(f"ss=={i}==>")
                 offset += decodeOne(bits[offset:])
-                print(f"<=={i}==ss")
+                logging.debug(f"<=={i}==ss")
 
-    print(f"<---{offset}---")
+    logging.debug(f"<---{offset}---")
     return offset
 
 
@@ -79,19 +79,20 @@ def decodeLiteral(bits):
         valbits += chunk[1:] 
         more = int(chunk[0],2) # because 0 is False.
         # print("chunk,valbits,more",chunk,valbits,more)
-    print("val:",int(valbits,2))
+    logging.debug("val:",int(valbits,2))
     return offset
 
 
-
+l = logging.getLogger()
+l.setLevel(logging.DEBUG)
+l.setLevel(logging.INFO)
 
 for input in inputs:
     b="".join([ format(int(x,16),'04b') for x in input]) # Hacky to avoid zeropad the overall bigInt...
     VERSIONSUM=0
-
     
     decodeOne(b)
-    print('VERSIONSUM:',VERSIONSUM)
-    print("-- end --")
+    logging.info(f"VERSIONSUM:{VERSIONSUM}")
+    logging.debug("-- end --")
 
 
