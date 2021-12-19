@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 import re
 import numpy as np
+import multiprocessing
 # from itertools import permutations
 
 ROTATIONS=[]
@@ -99,7 +100,7 @@ def match(scana,scanb):
     i=0
     for brotation in range(24):
         print(f"Testing B-Rotation {brotation} i: {i}")
-        for anchora in scana.beaconsRotations:
+        for anchora in scana.beaconsRotations[0:15]:   # Shortcut - there are 26 of these - and we need a 12 hit, so check at most 14
             matchCount=0
             for beacona in scana.beaconsRotations:
                 if not np.array_equal(anchora[0],beacona[0]):
@@ -120,37 +121,48 @@ def match(scana,scanb):
 
     return None,None
 
-# for i in range(5):
-
 todolist = list(range(1,len(scanners)))
 donelist = [ 0 ]
+checked=[]
 
 while todolist:
     print("(Re)start while")
     found=False
     for i1 in donelist:
         for i2 in todolist:
-            print(f"Checking scanner {i1} vs {i2}.. done {donelist} todo {todolist}")
-            rot,offset = match(scanners[i1],scanners[i2])
-            if rot != None:
-                found=True
-                print(f"Scanner{i1}=>{i2} rot:{rot} offset:{offset.reshape((1,3))}")
-                scanners[i2].myRotation = rot
-                scanners[i2].myOffset   = offset
-                # TODO Put rotated+offset value in scanners[i2].beaconsRotations[:][0] for future matching
-                for b in range(len(scanners[i2].beaconsRotations)):
-                    scanners[i2].beaconsRotations[b][0] = scanners[i2].beaconsRotations[b][rot] + offset
-                donelist.append(i2)
-                todolist.remove(i2)
-                break
+            if f"{i1}_{i2}" in checked:
+                print(f"Allready done  {i1} vs {i2} - skip")
+            else:
+                print(f"Checking scanner {i1} vs {i2}.. done {donelist} todo {todolist}")
+                rot,offset = match(scanners[i1],scanners[i2])
+                checked.append(f"{i1}_{i2}")
+                if rot != None:
+                    found=True
+                    print(f"Scanner{i1}=>{i2} rot:{rot} offset:{offset.reshape((1,3))}")
+                    scanners[i2].myRotation = rot
+                    scanners[i2].myOffset   = offset
+                    # TODO Put rotated+offset value in scanners[i2].beaconsRotations[:][0] for future matching
+                    for b in range(len(scanners[i2].beaconsRotations)):
+                        scanners[i2].beaconsRotations[b][0] = scanners[i2].beaconsRotations[b][rot] + offset
+                    donelist.append(i2)
+                    todolist.remove(i2)
+                    break
         else:
             continue
         break
     if not found:
         assert ValueError("Motherfucker")
 
+finalbeacons = []
 for s in scanners:
-    print(s.number,s.myRotation, s.myOffset)
+    for b in s.beaconsRotations:      
+        finalbeacons.append(str(b[0].reshape(1,3)))
+
+print(set(finalbeacons))
+print(len(set(finalbeacons)))
+
+
+
 
 # from s0
 
