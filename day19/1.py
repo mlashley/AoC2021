@@ -91,8 +91,8 @@ def loadFile(filename):
         s.allRot()
     return scanners
 
-# scanners = loadFile("input")
-scanners = loadFile("input.test")
+scanners = loadFile("input")
+# scanners = loadFile("input.test")
 # Naive and not actually true for (1,1,-1) or (2,-2,2) etc...
 assert len(set(str(r) for r in scanners[0].beacons[0].allRot())) == 24
 assert len(set(str(r) for r in scanners[0].beaconsRotations[0])) == 24
@@ -167,7 +167,7 @@ while todolist:
     for i1 in donelist:
         for i2 in todolist:
             if f"{i1}_{i2}" in checked:
-                print(f"Allready done  {i1} vs {i2} - skip")
+                print(f"Already done {i1} vs {i2} - skip")
             else:
                 print(f"Checking scanner {i1} vs {i2}.. done {donelist} todo {todolist}")
                 rot,offset = mpmatch(scanners[i1],scanners[i2])
