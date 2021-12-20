@@ -1,4 +1,6 @@
 #!/usr/bin/python3
+import numpy as np
+from matplotlib import pyplot as plt
 
 def load(filename):
     with open(filename,"r") as f:
@@ -50,11 +52,19 @@ def newBitAt(x,y,img,alg):
 
 def printImg(img):
     count=0
+    n = np.full((len(img),len(img[0])),False)
+    r=0
     for row in img:
-        print(row)
+        # print(row)
+        n[r] = np.frombuffer(bytes(row.replace(".",chr(0x0)),"utf8"),dtype='bool')
+        r=r+1
         count += sum([int(c) for c in row.replace("#","1").replace(".","0")])
+    plt.imshow(n,interpolation='nearest')
+    plt.show()
     print(f"Count: {count} [ {len(img)} x {len(img[0])} ]")
     return count
+
+
 
 def applyMask(img,alg):
     y=len(img)
@@ -126,7 +136,7 @@ def part2():
     i=expand(i,150)
     for c in range(iters):
         i=applyMask(i,a)
-    printImg(i)
+        printImg(i)
     
 # unitTests()
 # malcTests()
