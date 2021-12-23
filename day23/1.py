@@ -22,6 +22,16 @@ from functools import cache
 start = (3,4,3,2,4,2,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
 teststart = (1,2,4,3,3,2,1,4,0,0,0,0,0,0,0,0,0,0,0,0,0)
 
+# Part 2 adds 2 more rows... - so our room array [0:15] and hallway [16:26]
+
+#############
+#...........#
+###B#C#B#D###
+  #D#C#B#A#
+  #D#B#A#C#
+  #A#D#C#A#
+  #########
+
 
 # Rules
 
@@ -37,37 +47,50 @@ teststart = (1,2,4,3,3,2,1,4,0,0,0,0,0,0,0,0,0,0,0,0,0)
 
 # For recursion - should not cost more than current best score.
 
-entrancesIdx = (10,12,14,16)
+# Part1
+ENTRANCEIDX = (10,12,14,16) # Part1
+COMPLETE=(1,1,2,2,3,3,4,4) # Part1
+ROOMCOUNT = 8
+SCOREOFF  = 19 # 19 part 1
+ROOMROWS = 2
+
+# Part2
+#ENTRANCEIDX = (18,20,22,24)
+#complete=(1,1,1,1,2,2,2,2,3,3,3,3,4,4,4,4)
+#ROOMCOUNT = 16 # 8 part 1
+#SCOREOFF  = 27 # 19 part 1
+#ROOMROWS = 4
+
 
 @cache
 def nextStates(st):
     global best
     # printState(st)
     score = lambda a,moves : moves * (10**(a-1))
-    hallindexoutsideroom = lambda a : (2*a)+8
+    hallindexoutsideroom = lambda a : (2*a)+ROOMCOUNT
 
-    if st[:8] == (1,1,2,2,3,3,4,4):
-        print("Finished score",st[19])
-        if st[19] < best:
-            logging.info("Finished new best score",st[19])
-            best = st[19]
+    if st[:ROOMCOUNT] == COMPLETE:
+        print("Finished score",st[SCOREOFF])
+        if st[SCOREOFF] < best:
+            logging.info(f"Finished new best score {st[SCOREOFF]}")
+            best = st[SCOREOFF]
         else:
-            logging.debug("Finished score",st[19])
-        printState(st)       
+            logging.debug("Finished score {st[SCOREOFF]}")
+        # printState(st)
         return []
 
-    if st[19] > best:
-        logging.debug(f"Abort {st[19]} larger {best}")
+    if st[SCOREOFF] > best:
+        logging.debug(f"Abort {st[SCOREOFF]} larger {best}")
         return []
 
     ns = []
-    for i,a in enumerate(st[0:19]): 
+    for i,a in enumerate(st[0:SCOREOFF]):
         if(a>0): # Something to move?
-            if i < 8:  # Rooms
+            if i < ROOMCOUNT:  # Rooms
 
                 # Don't move out of endpos...
 
-                if i in (0,2,4,6): # Bottom room
+                if i in range(0,ROOMCOUNT,2): # Bottom room
                     if i == 2*(a-1): # Target Room
                         logging.debug(f"a{a} at {i} in target room (lower)")
                         continue
@@ -91,32 +114,32 @@ def nextStates(st):
                 hallindexoutside = hallindexoutsideroom((i//2)+1) # (a)
                 # To the Left
                 for hallpos in range(hallindexoutside-1,7,-1):
-                    if st[hallpos] == 0 and hallpos not in entrancesIdx:
+                    if st[hallpos] == 0 and hallpos not in ENTRANCEIDX:
                         newsta = [x for x in st]
                         newsta[hallpos] = a
                         newsta[i] = 0
-                        newsta[19] += score(a,rmoves+(hallindexoutside-hallpos))
+                        newsta[SCOREOFF] += score(a,rmoves+(hallindexoutside-hallpos))
                         ns.append(tuple(newsta))
                     elif st[hallpos] != 0:
                         break # We are done...
 
                 # To the Right
                 # Note that we don't check the interim here because we are doing it incrementatlly and breaking.
-                for hallpos in range(hallindexoutside+1,19):
+                for hallpos in range(hallindexoutside+1,SCOREOFF):
                     logging.debug(f"a:{a} i:{i} hp:{hallpos} st:{st[hallpos]} h-i-outside{hallindexoutside}")
-                    if st[hallpos] == 0 and hallpos not in entrancesIdx:
+                    if st[hallpos] == 0 and hallpos not in ENTRANCEIDX:
                         newsta = [x for x in st]
                         newsta[hallpos] = a
                         newsta[i] = 0
-                        newsta[19] += score(a,rmoves+(hallpos-hallindexoutside))
+                        newsta[SCOREOFF] += score(a,rmoves+(hallpos-hallindexoutside))
                         ns.append(tuple(newsta))
                     elif st[hallpos] != 0:
                         break # We are done...
                 
                 
-            else: # i>=8 => Corridor 
-                targethallidx = 8 + (a * 2) # 10,12,14,16 in world idx
-                assert targethallidx in entrancesIdx
+            else: # i>=ROOMCOUNT => Corridor
+                targethallidx = ROOMCOUNT + (a * 2) # 10,12,14,16 in world idx
+                assert targethallidx in ENTRANCEIDX
                 logging.debug(f"i:{i} Targethallindex: {targethallidx}")
                 if ( i<targethallidx and not any(st[i+1:targethallidx+1]) ) or ( targethallidx<i and not any(st[targethallidx:i]) ) :
                     
@@ -124,37 +147,31 @@ def nextStates(st):
                         moves = targethallidx-i
                     else:
                         moves = i-targethallidx
-                    logging.debug(f"Clear to hall outside room {i} {a} in {moves} moves")
-                    j = 2*(a-1) # j is side-room-offset into state array, for given ammphi a is 1-based...
-                    if st[j] == 0 and st[j+1]==0:
-                        logging.debug(f"Move to sideroom-low is valid")
-                        moves += 2
-                        newsta = [x for x in st]
-                        newsta[j] = a
-                        newsta[i] = 0       
-                        newsta[19] += score(a,moves) # Add score
-                        ns.append(tuple(newsta))
-                    elif st[j] == a and st[j+1]==0:     
-                        logging.debug(f"Move to sideroom-high is valid")
-                        moves += 1
-                        newsta = [x for x in st]
-                        newsta[j+1] = a
-                        newsta[i] = 0
-                        newsta[19] += score(a,moves)
-                        ns.append(tuple(newsta))
+                    logging.debug(f"Clear to hall outside room i:{i} a:{a} in {moves} moves")
+                    j = ROOMROWS*(a-1) # j is side-room-offset into state array, for given ammphi a is 1-based...
+                    for k in range(0,ROOMROWS):
+                        logging.debug(f"Check {st[j+k:j+ROOMROWS]} = {(0,)*(ROOMROWS-k)} for j:{j} k:{k} {ROOMROWS}")
+                        if st[j+k:j+ROOMROWS] == (0,)*(ROOMROWS-k) and st[j:j+k] == (a,)*k: # If All above are empty _and_ all below are us.
+                            logging.debug(f"Move to sideroom-{k} is valid")
+                            rmoves = ROOMROWS-k
+                            newsta = [x for x in st]
+                            newsta[j+k] = a
+                            newsta[i] = 0
+                            newsta[SCOREOFF] += score(a,moves+rmoves) # Add score
+                            ns.append(tuple(newsta))
     
     # if len(ns) == 0:
     #     print("==== NO MORE MOVES ==== ")
     #     printState(st)
     #     print("==== END NO MORE MOVES ==== ")
 
-    # print(f"Score {st[19]} Looping {len(ns)} more")
+    # print(f"Score {st[SCOREOFF]} Looping {len(ns)} more")
     return [ nextStates(x) for x in ns ]
 
 def printState(st):
-    hall=st[8:19]
-    siderooms = list(zip(st[0:8:2],st[1:8:2]))
-    score=st[19]
+    hall=st[ROOMCOUNT:SCOREOFF]
+    siderooms = list(zip(st[0:ROOMCOUNT:2],st[1:ROOMCOUNT:2]))
+    score=st[SCOREOFF]
     minscore=best
     halltxt="".join([str(x) if x>0 else "." for x in hall])
     sideroomuppertxt = "#".join([ str(r[1]) for r in siderooms ])
@@ -180,12 +197,14 @@ l.setLevel(logging.INFO)
 
 best=99999999
 n=nextStates(teststart)
-assert best==12521 
 print(f"Test Best {best}")
+assert best==12521
+
 
 best=99999999
 n=nextStates(start)
 print(f"Part 1Best {best}")
+assert best==15472
 
 
 
