@@ -46,25 +46,6 @@ from functools import cache
 
 # For recursion - should not cost more than current best score.
 
-# # Part1
-start = (3,4,3,2,4,2,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
-teststart = (1,2,4,3,3,2,1,4,0,0,0,0,0,0,0,0,0,0,0,0,0)
-ENTRANCEIDX = (10,12,14,16) # Part1
-COMPLETE=(1,1,2,2,3,3,4,4) # Part1
-ROOMCOUNT = 8
-SCOREOFF  = 19 # 19 part 1
-ROOMROWS = 2
-
-# # Part2
-# start2 = (3,4,4,4,3,2,3,2,4,1,2,2,1,3,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
-# teststart2 = (1,4,4,2,4,2,3,3,3,1,2,2,1,3,1,4,0,0,0,0,0,0,0,0,0,0,0,0,0)
-# ENTRANCEIDX = (18,20,22,24)
-# COMPLETE=(1,1,1,1,2,2,2,2,3,3,3,3,4,4,4,4)
-# ROOMCOUNT = 16 # 8 part 1
-# SCOREOFF  = 27 # 19 part 1
-# ROOMROWS = 4
-
-
 @cache
 def nextStates(st):
     global best
@@ -109,27 +90,7 @@ def nextStates(st):
                     logging.debug(f"a{a} at i:{i} is blocked in room {inroom}")
                     continue
 
-
                 rmoves = ROOMROWS-inrow 
-
-                # if i in range(0,ROOMCOUNT,ROOMROWS): # Bottom room
-                #     if i == ROOMROWS*(a-1): # Target Room
-                #         logging.debug(f"a{a} at {i} in target room (lower)")
-                #         continue
-
-                #     if st[i+1]:  # No way out past...
-                #         logging.debug(f"a{a} at {i} no way out past {st[i+1]}")
-                #         continue
-
-                #     rmoves=2 # We step into the corridor
-                #     logging.debug(f"Possible Lower step into corridor for a{a} at idx:{i}")
-                # else: # Upper Rooms
-                #     # Here we must check we have not trapped another class below us...
-                #     if i-1 == 2*(a-1) and st[i-1] == a: # Target Room
-                #         logging.debug(f"a{a} at {i} in target room (upper)")
-                #         continue
-                #     rmoves=1 # We step into the corridor
-                #     logging.debug(f"Possible Upper step into corridor for a{a} at idx:{i}")
 
                 hallindexoutside = hallindexoutsideroom((i//ROOMROWS)+1) # (a)
                 # To the Left
@@ -156,6 +117,7 @@ def nextStates(st):
                     elif st[hallpos] != 0:
                         break # We are done...
                 
+                # Keep it goin' keep it going it's all-right (Stereo MCs...)
                 
             else: # i>=ROOMCOUNT => Corridor
                 targethallidx = ROOMCOUNT + (a * 2) # 10,12,14,16 in world idx
@@ -223,6 +185,14 @@ l.setLevel(logging.DEBUG)
 l.setLevel(logging.INFO)
 
 
+# # Part1
+start = (3,4,3,2,4,2,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
+teststart = (1,2,4,3,3,2,1,4,0,0,0,0,0,0,0,0,0,0,0,0,0)
+ENTRANCEIDX = (10,12,14,16) 
+COMPLETE=(1,1,2,2,3,3,4,4) 
+ROOMCOUNT = 8
+SCOREOFF  = 19 
+ROOMROWS = 2
 
 # Part 1 
 best=99999999
@@ -235,57 +205,26 @@ n=nextStates(start)
 print(f"Test1 Best {best}")
 assert best==15472
 
-
 # Part2 
 
-import sys
-print(sys.getrecursionlimit())
+start2 = (3,4,4,4,3,2,3,2,4,1,2,2,1,3,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
+teststart2 = (1,4,4,2,4,2,3,3,3,1,2,2,1,3,1,4,0,0,0,0,0,0,0,0,0,0,0,0,0)
+ENTRANCEIDX = (18,20,22,24)
+COMPLETE=(1,1,1,1,2,2,2,2,3,3,3,3,4,4,4,4)
+ROOMCOUNT = 16 
+SCOREOFF  = 27 
+ROOMROWS = 4
 
 best=99999999
-# printBiggerState(teststart2)
-# n=nextStates(teststart2)
-# print(f"Test Best {best}")
-# assert best==44169
+printBiggerState(teststart2)
+n=nextStates(teststart2)
+print(f"Test Best {best}")
+assert best==44169
 
+best=99999999
+printBiggerState(start2)
+n=nextStates(start2)
+print(f"Part 2 Best {best}")
 
-# best=99999999
-# n=nextStates(start2)
-# print(f"Part 2 Best {best}")
-
-
-
-
-# Random interim unit-tests from partial implementation.
-
-# t1=(1,1,2,2,3,0,4,0,3,0,0,0,0,0,0,0,0,0,4,0,0)
-# t1=(1,0,2,2,3,0,4,0,3,0,0,0,0,1,0,0,0,0,4,0,0)
-# print("From:")
-# printState(t1)
-# print("To:")
-# for s in nextStates(t1):
-#     printState(s)
-
-# assert nextStates((1,1,2,2,3,0,4,0,3,0,0,0,0,0,0,0,0,0,4,0,0)) == [
-# (1, 1, 2, 2, 3, 3, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 700, 0),
-# (1, 1, 2, 2, 3, 0, 4, 4, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3000, 0)
-# ]
-
-# assert nextStates((1,0,2,2,3,0,4,0,3,0,0,0,0,1,0,0,0,0,4,0,0)) == [
-# (1, 1, 2, 2, 3, 0, 4, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 4, 0),
-# (1, 0, 2, 2, 3, 0, 4, 4, 3, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 3000, 0)
-# ]
-
-# assert nextStates((1,0,2,2,3,0,4,0,3,0,0,0,0,0,0,0,0,1,4,0,0)) == [
-# (1, 0, 2, 2, 3, 3, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 4, 700, 0),
-# (1, 1, 2, 2, 3, 0, 4, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 8, 0)
-# ]
-
-# t1=(1,0,2,2,3,0,4,0,3,0,0,0,0,0,0,1,0,0,4,0,0)
-
-# print("From:")
-# printState(t1)
-# print("To:")
-# for s in nextStates(t1):
-#     printState(s)
 
 
