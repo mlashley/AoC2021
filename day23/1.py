@@ -19,8 +19,7 @@ from functools import cache
 
 # We will serialize the current/best energy spends to an additional last two positions.
 
-start = (3,4,3,2,4,2,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
-teststart = (1,2,4,3,3,2,1,4,0,0,0,0,0,0,0,0,0,0,0,0,0)
+
 
 # Part 2 adds 2 more rows... - so our room array [0:15] and hallway [16:26]
 
@@ -47,30 +46,35 @@ teststart = (1,2,4,3,3,2,1,4,0,0,0,0,0,0,0,0,0,0,0,0,0)
 
 # For recursion - should not cost more than current best score.
 
-# Part1
+# # Part1
+start = (3,4,3,2,4,2,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
+teststart = (1,2,4,3,3,2,1,4,0,0,0,0,0,0,0,0,0,0,0,0,0)
 ENTRANCEIDX = (10,12,14,16) # Part1
 COMPLETE=(1,1,2,2,3,3,4,4) # Part1
 ROOMCOUNT = 8
 SCOREOFF  = 19 # 19 part 1
 ROOMROWS = 2
 
-# Part2
-#ENTRANCEIDX = (18,20,22,24)
-#complete=(1,1,1,1,2,2,2,2,3,3,3,3,4,4,4,4)
-#ROOMCOUNT = 16 # 8 part 1
-#SCOREOFF  = 27 # 19 part 1
-#ROOMROWS = 4
+# # Part2
+# start2 = (3,4,4,4,3,2,3,2,4,1,2,2,1,3,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
+# teststart2 = (1,4,4,2,4,2,3,3,3,1,2,2,1,3,1,4,0,0,0,0,0,0,0,0,0,0,0,0,0)
+# ENTRANCEIDX = (18,20,22,24)
+# COMPLETE=(1,1,1,1,2,2,2,2,3,3,3,3,4,4,4,4)
+# ROOMCOUNT = 16 # 8 part 1
+# SCOREOFF  = 27 # 19 part 1
+# ROOMROWS = 4
 
 
 @cache
 def nextStates(st):
     global best
+    # print(st)
     # printState(st)
     score = lambda a,moves : moves * (10**(a-1))
     hallindexoutsideroom = lambda a : (2*a)+ROOMCOUNT
 
     if st[:ROOMCOUNT] == COMPLETE:
-        print("Finished score",st[SCOREOFF])
+        logging.debug(f"Finished score {st[SCOREOFF]}")
         if st[SCOREOFF] < best:
             logging.info(f"Finished new best score {st[SCOREOFF]}")
             best = st[SCOREOFF]
@@ -90,30 +94,46 @@ def nextStates(st):
 
                 # Don't move out of endpos...
 
-                if i in range(0,ROOMCOUNT,2): # Bottom room
-                    if i == 2*(a-1): # Target Room
-                        logging.debug(f"a{a} at {i} in target room (lower)")
-                        continue
+                inroom = i//ROOMROWS
+                inrow  = i % ROOMROWS
+                roombase = i-inrow
 
-                    if st[i+1]:  # No way out past...
-                        logging.debug(f"a{a} at {i} no way out past {st[i+1]}")
-                        continue
-
-                    rmoves=2 # We step into the corridor
-                    logging.debug(f"Possible Lower step into corridor for a{a} at idx:{i}")
-                else: # Upper Rooms
-                    # Here we must check we have not trapped another class below us...
-                    if i-1 == 2*(a-1) and st[i-1] == a: # Target Room
-                        logging.debug(f"a{a} at {i} in target room (upper)")
-                        continue
+                logging.debug(f"{roombase}:{i} {inroom} * {inrow}")
+                if st[roombase:i+1] == (inroom+1,)*(inrow+1): # In target room and all below are our class.
+                    logging.debug(f"a{a} at i:{i} in target room {inroom}")
+                    continue
+                
+                logging.debug(f"B: {i}:{i+ROOMROWS-inrow}  {ROOMROWS!=inrow+1} {st[i+1:i+ROOMROWS-inrow]} {(0,) * (ROOMROWS-inrow-1)}")
+                if ROOMROWS!=inrow+1 and st[i+1:i+ROOMROWS-inrow] != (0,) * (ROOMROWS-inrow-1):
+                #   not _top_ row          and non zero's above us
+                    logging.debug(f"a{a} at i:{i} is blocked in room {inroom}")
+                    continue
 
 
-                    rmoves=1 # We step into the corridor
-                    logging.debug(f"Possible Upper step into corridor for a{a} at idx:{i}")
+                rmoves = ROOMROWS-inrow 
 
-                hallindexoutside = hallindexoutsideroom((i//2)+1) # (a)
+                # if i in range(0,ROOMCOUNT,ROOMROWS): # Bottom room
+                #     if i == ROOMROWS*(a-1): # Target Room
+                #         logging.debug(f"a{a} at {i} in target room (lower)")
+                #         continue
+
+                #     if st[i+1]:  # No way out past...
+                #         logging.debug(f"a{a} at {i} no way out past {st[i+1]}")
+                #         continue
+
+                #     rmoves=2 # We step into the corridor
+                #     logging.debug(f"Possible Lower step into corridor for a{a} at idx:{i}")
+                # else: # Upper Rooms
+                #     # Here we must check we have not trapped another class below us...
+                #     if i-1 == 2*(a-1) and st[i-1] == a: # Target Room
+                #         logging.debug(f"a{a} at {i} in target room (upper)")
+                #         continue
+                #     rmoves=1 # We step into the corridor
+                #     logging.debug(f"Possible Upper step into corridor for a{a} at idx:{i}")
+
+                hallindexoutside = hallindexoutsideroom((i//ROOMROWS)+1) # (a)
                 # To the Left
-                for hallpos in range(hallindexoutside-1,7,-1):
+                for hallpos in range(hallindexoutside-1,ROOMCOUNT-1,-1):
                     if st[hallpos] == 0 and hallpos not in ENTRANCEIDX:
                         newsta = [x for x in st]
                         newsta[hallpos] = a
@@ -161,9 +181,9 @@ def nextStates(st):
                             ns.append(tuple(newsta))
     
     # if len(ns) == 0:
-    #     print("==== NO MORE MOVES ==== ")
+    #     logging.info("==== NO MORE MOVES ==== ")
     #     printState(st)
-    #     print("==== END NO MORE MOVES ==== ")
+    #     logging.info("==== END NO MORE MOVES ==== ")
 
     # print(f"Score {st[SCOREOFF]} Looping {len(ns)} more")
     return [ nextStates(x) for x in ns ]
@@ -181,30 +201,57 @@ def printState(st):
     sideroomuppertxt = sideroomuppertxt.replace("1","A").replace("2","B").replace("3","C").replace("4","D").replace("0",".")
     sideroomlowertxt = sideroomlowertxt.replace("1","A").replace("2","B").replace("3","C").replace("4","D").replace("0",".")
 
-    print(f"############# Score: {score}")
-    print(f"#{halltxt}# Best:  {minscore}")
-    print(f"###{sideroomuppertxt}###")
-    print(f"  #{sideroomlowertxt}#  ")
-    print(f"  #########\n\n{st}")
+    logging.info(f"############# Score: {score}")
+    logging.info(f"#{halltxt}# Best:  {minscore}")
+    logging.info(f"###{sideroomuppertxt}###")
+    logging.info(f"  #{sideroomlowertxt}#  ")
+    logging.info(f"  #########\n\n{st}")
+
+def printBiggerState(st):
+
+    s = f"#"*13 + "\n"
+    s += "#" + "".join([str(x) for x in st[ROOMCOUNT:ROOMCOUNT+11]]) + f"# Score {st[SCOREOFF]}\n"
+    s += "###" + "#".join([str(x) for x in st[3:ROOMCOUNT:ROOMROWS]]) + f"### Best {best}\n"
+    s += "  #" + "#".join([str(x) for x in st[2:ROOMCOUNT:ROOMROWS]]) + "#\n"
+    s += "  #" + "#".join([str(x) for x in st[1:ROOMCOUNT:ROOMROWS]]) + "#\n"
+    s += "  #" + "#".join([str(x) for x in st[0:ROOMCOUNT:ROOMROWS]]) + "#\n"
+    s=s.replace("1","A").replace("2","B").replace("3","C").replace("4","D").replace("0",".")
+    print(s)
 
 l = logging.getLogger()
 l.setLevel(logging.DEBUG)
 l.setLevel(logging.INFO)
 
 
-# teststart=(1,0,4,0,3,0,1,4,0,0,0,2,0,0,0,2,0,3,0,0,0) # was broken
-# teststart=(1,0,2,2,3,0,4,0,3,0,0,0,0,0,0,0,0,1,4,0,0) # easy
 
+# Part 1 
 best=99999999
 n=nextStates(teststart)
-print(f"Test Best {best}")
+print(f"Test1 Best {best}")
 assert best==12521
-
 
 best=99999999
 n=nextStates(start)
-print(f"Part 1Best {best}")
+print(f"Test1 Best {best}")
 assert best==15472
+
+
+# Part2 
+
+import sys
+print(sys.getrecursionlimit())
+
+best=99999999
+# printBiggerState(teststart2)
+# n=nextStates(teststart2)
+# print(f"Test Best {best}")
+# assert best==44169
+
+
+# best=99999999
+# n=nextStates(start2)
+# print(f"Part 2 Best {best}")
+
 
 
 
